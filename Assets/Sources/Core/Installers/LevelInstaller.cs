@@ -8,9 +8,12 @@ public class LevelInstaller : MonoInstaller
     [Required] [SerializeField] private Transform _spawnPoint;
 
     private CharacterController _characterController;
+    private CharacterPresenter _characterPresenter;
 
     public override void InstallBindings()
     {
+        SignalBusInstaller.Install(Container);
+        
         BindServices();
         BindCharacter();
         BindGameLoop();
@@ -19,11 +22,13 @@ public class LevelInstaller : MonoInstaller
     private void BindCharacter()
     {
         Container.Bind<Character>().AsSingle().WithArguments(_spawnPoint.ToModel());
+        Container.Bind<CharacterHead>().AsSingle();
         Container.Bind<ICharacterStateMachine>().To<CharacterStateMachine>().AsSingle();
         Container.Bind<CharacterStatesCachedPoolProvider>().AsSingle().WhenInjectedInto<CharacterStateMachine>();
         Container.Bind<IEnumerable<ICharacterState>>().FromMethod(CreateCharacterStates).WhenInjectedInto<CharacterStatesCachedPoolProvider>();
 
         _characterController = Container.Instantiate<CharacterController>();
+        _characterPresenter = Container.Instantiate<CharacterPresenter>();
 
         IEnumerable<ICharacterState> CreateCharacterStates(InjectContext ctx)
         {
@@ -40,9 +45,9 @@ public class LevelInstaller : MonoInstaller
         Container.Bind<IHandler<StartTick>>()
             .FromInstance(new CompositeHandler<StartTick>(new IHandler<StartTick>[]
             {
-                _characterController
-            }))
-            .WhenInjectedInto<GameLoop>();
+                _characterController,
+                _characterPresenter
+            })).WhenInjectedInto<GameLoop>();
 
         Container.Bind<IHandler<Tick>>()
             .FromInstance(new CompositeHandler<Tick>(new IHandler<Tick>[]
@@ -53,9 +58,14 @@ public class LevelInstaller : MonoInstaller
         Container.Bind<IHandler<FixedTick>>()
             .FromInstance(new CompositeHandler<FixedTick>(new IHandler<FixedTick>[]
             {
-                _characterController
-            }))
-            .WhenInjectedInto<GameLoop>();
+                _characterController,
+            })).WhenInjectedInto<GameLoop>();
+
+        Container.Bind<IHandler<DestroyTick>>().FromInstance(new CompositeHandler<DestroyTick>(
+            new IHandler<DestroyTick>[]
+            {
+                _characterPresenter
+            }));
 
         Container.InstantiateComponent<GameLoop>(new GameObject("Game Loop"));
     }
@@ -63,6 +73,8 @@ public class LevelInstaller : MonoInstaller
     private void BindServices()
     {
         Container.Bind<IInputService>().To<OldEditorInputService>().AsSingle();
+        Container.Bind<IAssetProvider>().To<ResourcesAssetProvider>().AsSingle();
+        Container.Bind<ICameraService>().To<CinemachineCameraService>().AsSingle();
     }
     
 #if UNITY_EDITOR

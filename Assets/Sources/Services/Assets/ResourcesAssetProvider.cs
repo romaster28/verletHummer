@@ -7,9 +7,9 @@ using Zenject;
 public class ResourcesAssetProvider : IAssetProvider
 {
     [SerializeField, FoldoutGroup("Asset Paths")]
-    private List<string> _assetPaths = new List<string>(); // Пути к активам для редактора
+    private List<string> _assetPaths = new List<string>();
 
-    private readonly Dictionary<string, Object> _loadedAssets = new Dictionary<string, Object>();
+    private readonly Dictionary<string, Object> _loadedAssets = new();
 
     [Inject]
     private void Construct()

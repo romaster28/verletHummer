@@ -9,7 +9,7 @@ public class GroundMoveState : ICharacterState
     private readonly IInputService _inputService;
     private readonly CharacterConfig _config;
 
-    private IDisposable _moveSubscribe;
+    private readonly CompositeDisposable _inputSubscribe = new();
     
     public GroundMoveState(Character player, CharacterConfig config, IInputService inputService)
     {
@@ -18,23 +18,34 @@ public class GroundMoveState : ICharacterState
         _simulation = new CharacterModel(config, player.Position.Value);
     }
 
-    public void Enter()
+    private void OnMoveInput(Vector2 input)
     {
-        _moveSubscribe = _inputService.GetHandler<MoveInput>().Property.Subscribe(OnMoveInput);
+        _simulation.MoveByDirection(new Vector3(input.x, 0, input.y));
     }
 
-    public void Exit()
+    private void OnJumpInput(bool isActive)
     {
-        _moveSubscribe?.Dispose();
+        if (isActive)
+            _simulation.TryJump();
+    }
+
+    public void Enter()
+    {
+        _inputService.GetHandler<MoveInput>().Property.Subscribe(OnMoveInput).AddTo(_inputSubscribe);
+        _inputService.GetHandler<JumpInput>().Property.Subscribe(OnJumpInput).AddTo(_inputSubscribe);
     }
 
     public void FixedTick()
     {
         _simulation.TickSimulate();
+        
+        _player.Position.Value = _simulation.Transform.Position;
+        _player.Rotation.Value = _simulation.Transform.Rotation;
+        _player.Scale.Value = _simulation.Transform.Scale;
     }
 
-    private void OnMoveInput(Vector2 input)
+    public void Exit()
     {
-        _simulation.MoveByDirection(input);
+        _inputSubscribe?.Dispose();
     }
 }

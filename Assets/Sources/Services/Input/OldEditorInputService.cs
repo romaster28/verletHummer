@@ -10,15 +10,21 @@ public class OldEditorInputService : IInputService
     public OldEditorInputService()
     {
         var moveProperty = new ReactiveProperty<Vector2>(Vector2.zero);
+        var jumpProperty = new ReactiveProperty<bool>(false);
+        var lookProperty = new ReactiveProperty<Vector2>(Vector2.zero);
         
         _handlers = new IInputHandler[]
         {
-            new MoveInput(moveProperty)
+            new MoveInput(moveProperty),
+            new JumpInput(jumpProperty),
+            new LookInput(lookProperty)
         };
 
         Observable.EveryUpdate().Subscribe(_ =>
         {
             moveProperty.Value = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+            lookProperty.Value = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+            jumpProperty.Value = Input.GetKeyDown(KeyCode.Space);
         });
     }
 
