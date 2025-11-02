@@ -2,10 +2,6 @@
 
 public class CharacterView : MonoBehaviour
 {
-    [SerializeField] private Transform _head;
-
-    public Transform Head => _head;
-
     public void UpdatePosition(Vector3 position)
     {
         transform.position = position;

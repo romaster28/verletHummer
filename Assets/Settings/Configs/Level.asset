@@ -23,3 +23,5 @@ MonoBehaviour:
       serializedVersion: 2
       m_Bits: 64
     _maxScopeAngle: 45
+    _height: 1.5
+    _verticalAngleRange: {x: -65, y: 65}

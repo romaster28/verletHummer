@@ -9,6 +9,8 @@ public class LevelInstaller : MonoInstaller
 
     private CharacterController _characterController;
     private CharacterPresenter _characterPresenter;
+    private CharacterHeadController _characterHeadController;
+    private CharacterHeadPresenter _characterHeadPresenter;
 
     public override void InstallBindings()
     {
@@ -22,13 +24,17 @@ public class LevelInstaller : MonoInstaller
     private void BindCharacter()
     {
         Container.Bind<Character>().AsSingle().WithArguments(_spawnPoint.ToModel());
-        Container.Bind<CharacterHead>().AsSingle();
+        Container.Bind<CharacterHead>().AsSingle().WithArguments(_spawnPoint.ToModel());
+        
         Container.Bind<ICharacterStateMachine>().To<CharacterStateMachine>().AsSingle();
         Container.Bind<CharacterStatesCachedPoolProvider>().AsSingle().WhenInjectedInto<CharacterStateMachine>();
         Container.Bind<IEnumerable<ICharacterState>>().FromMethod(CreateCharacterStates).WhenInjectedInto<CharacterStatesCachedPoolProvider>();
 
         _characterController = Container.Instantiate<CharacterController>();
         _characterPresenter = Container.Instantiate<CharacterPresenter>();
+
+        _characterHeadController = Container.Instantiate<CharacterHeadController>();
+        _characterHeadPresenter = Container.Instantiate<CharacterHeadPresenter>();
 
         IEnumerable<ICharacterState> CreateCharacterStates(InjectContext ctx)
         {
@@ -46,19 +52,22 @@ public class LevelInstaller : MonoInstaller
             .FromInstance(new CompositeHandler<StartTick>(new IHandler<StartTick>[]
             {
                 _characterController,
-                _characterPresenter
+                _characterPresenter,
+                _characterHeadController,
+                _characterHeadPresenter
             })).WhenInjectedInto<GameLoop>();
 
         Container.Bind<IHandler<Tick>>()
             .FromInstance(new CompositeHandler<Tick>(new IHandler<Tick>[]
             {
-                
+                _characterHeadController
             })).WhenInjectedInto<GameLoop>();
 
         Container.Bind<IHandler<FixedTick>>()
             .FromInstance(new CompositeHandler<FixedTick>(new IHandler<FixedTick>[]
             {
                 _characterController,
+                _characterHeadController
             })).WhenInjectedInto<GameLoop>();
 
         Container.Bind<IHandler<DestroyTick>>().FromInstance(new CompositeHandler<DestroyTick>(

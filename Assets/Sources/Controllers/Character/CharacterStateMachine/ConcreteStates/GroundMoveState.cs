@@ -5,22 +5,30 @@ using UnityEngine;
 public class GroundMoveState : ICharacterState
 {
     private readonly Character _player;
+    private readonly CharacterHead _head;
     private readonly CharacterModel _simulation;
     private readonly IInputService _inputService;
     private readonly CharacterConfig _config;
 
     private readonly CompositeDisposable _inputSubscribe = new();
     
-    public GroundMoveState(Character player, CharacterConfig config, IInputService inputService)
+    public GroundMoveState(Character player, CharacterConfig config, IInputService inputService, CharacterHead head)
     {
         _player = player ?? throw new ArgumentNullException(nameof(player));
         _inputService = inputService ?? throw new ArgumentNullException(nameof(inputService));
         _simulation = new CharacterModel(config, player.Position.Value);
+        _head = head ?? throw new ArgumentNullException(nameof(head));
     }
 
     private void OnMoveInput(Vector2 input)
     {
+        Debug.Log(input);
         _simulation.MoveByDirection(new Vector3(input.x, 0, input.y));
+    }
+
+    private void OnHeadRotationChanged(Quaternion rotation)
+    {
+        _simulation.RotateToAngle(rotation.eulerAngles.y);
     }
 
     private void OnJumpInput(bool isActive)
@@ -33,6 +41,7 @@ public class GroundMoveState : ICharacterState
     {
         _inputService.GetHandler<MoveInput>().Property.Subscribe(OnMoveInput).AddTo(_inputSubscribe);
         _inputService.GetHandler<JumpInput>().Property.Subscribe(OnJumpInput).AddTo(_inputSubscribe);
+        _head.Rotation.Subscribe(OnHeadRotationChanged);
     }
 
     public void FixedTick()

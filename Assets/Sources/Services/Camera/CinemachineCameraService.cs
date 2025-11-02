@@ -6,6 +6,7 @@ using Object = UnityEngine.Object;
 public interface ICameraService
 {
     void StartFollow(Transform target);
+    void StartFollow(TransformModel target);
 }
 
 public class CinemachineCameraService : ICameraService
@@ -15,6 +16,7 @@ public class CinemachineCameraService : ICameraService
     private readonly IAssetProvider _assetProvider;
 
     private CinemachineCamera _camera;
+    private Transform _followTarget;
 
     public CinemachineCameraService(IAssetProvider assetProvider)
     {
@@ -25,6 +27,16 @@ public class CinemachineCameraService : ICameraService
     {
         TryCreate();
         _camera.Target.TrackingTarget = target;
+    }
+
+    public void StartFollow(TransformModel model)
+    {
+        if (_followTarget == null)
+            _followTarget = new GameObject("Followtarget").transform;
+        
+        model.PositionUpdated += pos => _followTarget.position = pos;
+        model.RotationUpdated += rot => _followTarget.rotation = rot;
+        StartFollow(_followTarget);
     }
 
     private void TryCreate()

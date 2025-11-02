@@ -8,15 +8,13 @@ public class CharacterPresenter : IHandler<StartTick>, IHandler<DestroyTick>
     
     private readonly Character _character;
     private readonly IAssetProvider _assetProvider;
-    private readonly ICameraService _camera;
     private CharacterView _view;
     private CharacterView _prefab;
 
-    public CharacterPresenter(Character character, IAssetProvider assetProvider, ICameraService camera)
+    public CharacterPresenter(Character character, IAssetProvider assetProvider)
     {
         _character = character ?? throw  new ArgumentNullException(nameof(character));
         _assetProvider = assetProvider ?? throw new ArgumentNullException(nameof(assetProvider));
-        _camera = camera ?? throw new ArgumentNullException(nameof(camera));
     }
 
     public void Handle(StartTick eventData)
@@ -27,8 +25,6 @@ public class CharacterPresenter : IHandler<StartTick>, IHandler<DestroyTick>
         _character.Position.Subscribe(_view.UpdatePosition).AddTo(_view);
         _character.Rotation.Subscribe(_view.UpdateRotation).AddTo(_view);
         _character.Scale.Subscribe(_view.UpdateScale).AddTo(_view);
-        
-        _camera.StartFollow(_view.transform);
     }
 
     public void Handle(DestroyTick eventData)
