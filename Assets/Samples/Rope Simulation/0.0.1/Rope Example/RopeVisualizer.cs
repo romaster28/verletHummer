@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Sirenix.OdinInspector;
+﻿using DR.RopeSimulation;
 using UnityEngine;
 
 public class RopeVisualizer : MonoBehaviour
@@ -58,7 +56,7 @@ public class RopeVisualizer : MonoBehaviour
 
     private void UpdateConfig()
     {
-        var config = new RopeConfig(_segments, _segmentLength, _damping, _numOfConstraintRuns, _gravity);
+        var config = new DR.RopeSimulation.RopeConfig(_segments, _segmentLength, _damping, _numOfConstraintRuns, _gravity);
         _simulation = new RopeSimulation(config, _start.position);
     }
 }

@@ -11,16 +11,24 @@ public class LevelInstaller : MonoInstaller
     private CharacterPresenter _characterPresenter;
     private CharacterHeadController _characterHeadController;
     private CharacterHeadPresenter _characterHeadPresenter;
+    private RopeController _ropeController;
 
     public override void InstallBindings()
     {
         SignalBusInstaller.Install(Container);
         
         BindServices();
+        BindRope();
         BindCharacter();
         BindGameLoop();
     }
 
+    private void BindRope()
+    {
+        Container.Bind<RopeThrower>().AsSingle();
+        Container.DeclareSignal<RopeSpawned>();
+    }
+    
     private void BindCharacter()
     {
         Container.Bind<Character>().AsSingle().WithArguments(_spawnPoint.ToModel());
@@ -36,6 +44,7 @@ public class LevelInstaller : MonoInstaller
         _characterHeadController = Container.Instantiate<CharacterHeadController>();
         _characterHeadPresenter = Container.Instantiate<CharacterHeadPresenter>();
 
+        _ropeController = Container.Instantiate<RopeController>(); 
         IEnumerable<ICharacterState> CreateCharacterStates(InjectContext ctx)
         {
             return new ICharacterState[]
@@ -67,7 +76,8 @@ public class LevelInstaller : MonoInstaller
             .FromInstance(new CompositeHandler<FixedTick>(new IHandler<FixedTick>[]
             {
                 _characterController,
-                _characterHeadController
+                _characterHeadController,
+                _ropeController
             })).WhenInjectedInto<GameLoop>();
 
         Container.Bind<IHandler<DestroyTick>>().FromInstance(new CompositeHandler<DestroyTick>(
@@ -84,6 +94,7 @@ public class LevelInstaller : MonoInstaller
         Container.Bind<IInputService>().To<OldEditorInputService>().AsSingle();
         Container.Bind<IAssetProvider>().To<ResourcesAssetProvider>().AsSingle();
         Container.Bind<ICameraService>().To<CinemachineCameraService>().AsSingle();
+        Container.Bind<IRopeService>().To<RopeService>().AsSingle();
     }
     
 #if UNITY_EDITOR

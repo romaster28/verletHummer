@@ -5,9 +5,10 @@ using Zenject;
 public class LevelConfigInstaller : ScriptableObjectInstaller<LevelConfigInstaller>
 {
     [SerializeField] private CharacterConfig _character;
+    [SerializeField] private RopeConfig _rope;
     
     public override void InstallBindings()
     {
-        Container.BindInstances(_character);
+        Container.BindInstances(_character, _rope);
     }
 }

@@ -9,20 +9,21 @@ public class GroundMoveState : ICharacterState
     private readonly CharacterModel _simulation;
     private readonly IInputService _inputService;
     private readonly CharacterConfig _config;
+    private readonly RopeThrower _thrower;
 
     private readonly CompositeDisposable _inputSubscribe = new();
     
-    public GroundMoveState(Character player, CharacterConfig config, IInputService inputService, CharacterHead head)
+    public GroundMoveState(Character player, CharacterConfig config, IInputService inputService, CharacterHead head, RopeThrower thrower)
     {
         _player = player ?? throw new ArgumentNullException(nameof(player));
         _inputService = inputService ?? throw new ArgumentNullException(nameof(inputService));
         _simulation = new CharacterModel(config, player.Position.Value);
         _head = head ?? throw new ArgumentNullException(nameof(head));
+        _thrower = thrower ?? throw new ArgumentNullException(nameof(thrower));
     }
 
     private void OnMoveInput(Vector2 input)
     {
-        Debug.Log(input);
         _simulation.MoveByDirection(new Vector3(input.x, 0, input.y));
     }
 
@@ -37,10 +38,20 @@ public class GroundMoveState : ICharacterState
             _simulation.TryJump();
     }
 
+    private void OnThrowRopeInput(bool isActive)
+    {
+        if (!isActive)
+            return;
+
+        _thrower.ThrowToCrosshair();
+    }
+
     public void Enter()
     {
         _inputService.GetHandler<MoveInput>().Property.Subscribe(OnMoveInput).AddTo(_inputSubscribe);
         _inputService.GetHandler<JumpInput>().Property.Subscribe(OnJumpInput).AddTo(_inputSubscribe);
+        _inputService.GetHandler<ThrowRopeInput>().Property.Subscribe(OnThrowRopeInput).AddTo(_inputSubscribe);
+        
         _head.Rotation.Subscribe(OnHeadRotationChanged);
     }
 

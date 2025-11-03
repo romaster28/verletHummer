@@ -1,4 +1,6 @@
 ﻿using System;
+using DR.RopeSimulation;
+using DR.RopeSimulation.Example;
 using UnityEngine;
 
 [RequireComponent(typeof(RopeLineRendererVisualizer))]

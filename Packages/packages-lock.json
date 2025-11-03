@@ -12,7 +12,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "cd761ded6b7fe2087951492a5d78370b97fd09f2"
+      "hash": "ed11cc481ab62546ada47c08264805daf9f0022e"
     },
     "com.dxmxntxr.unitymodel": {
       "version": "https://github.com/romaster28/unityModel.git#develop",

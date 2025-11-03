@@ -7,6 +7,8 @@ public interface ICameraService
 {
     void StartFollow(Transform target);
     void StartFollow(TransformModel target);
+    Vector3 GetPosition();
+    Vector3 GetForward();
 }
 
 public class CinemachineCameraService : ICameraService
@@ -32,11 +34,21 @@ public class CinemachineCameraService : ICameraService
     public void StartFollow(TransformModel model)
     {
         if (_followTarget == null)
-            _followTarget = new GameObject("Followtarget").transform;
+            _followTarget = new GameObject("FollowTarget").transform;
         
         model.PositionUpdated += pos => _followTarget.position = pos;
         model.RotationUpdated += rot => _followTarget.rotation = rot;
         StartFollow(_followTarget);
+    }
+
+    public Vector3 GetPosition()
+    {
+        return _camera.transform.position;
+    }
+
+    public Vector3 GetForward()
+    {
+        return _camera.transform.forward;        
     }
 
     private void TryCreate()

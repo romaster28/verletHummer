@@ -25,3 +25,14 @@ MonoBehaviour:
     _maxScopeAngle: 45
     _height: 1.5
     _verticalAngleRange: {x: -65, y: 65}
+  _rope:
+    _accuracy: 100
+    _elastic: 25
+    _damping: 0.6
+    _connectLayer:
+      serializedVersion: 2
+      m_Bits: 64
+    _gravity: {x: 0, y: -9.84, z: 0}
+    _throwConfig:
+      _maxConnectDistance: 25
+      _throwSpeed: 35
