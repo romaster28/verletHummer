@@ -27,6 +27,7 @@ public class LevelInstaller : MonoInstaller
     {
         Container.Bind<RopeThrower>().AsSingle();
         Container.DeclareSignal<RopeSpawned>();
+        Container.DeclareSignal<RopeDeSpawned>();
     }
     
     private void BindCharacter()

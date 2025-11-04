@@ -25,10 +25,14 @@ public class RopeConfig
 public class RopeThrowConfig
 {
     [SerializeField] private float _maxConnectDistance = 25;
+    [SerializeField] private float _breakRopeDistance = 45;
     [SerializeField] private float _throwSpeed = 6;
+    [Min(0)] [SerializeField] private float _collapseModifier = 2;
 
     public float MaxConnectDistance => _maxConnectDistance;
     public float ThrowSpeed => _throwSpeed;
+    public float CollapseModifier => _collapseModifier;
+    public float BreakRopeDistance => _breakRopeDistance;
 }
 
 public static class RopeConfigExtensions

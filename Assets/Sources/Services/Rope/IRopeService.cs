@@ -5,17 +5,21 @@ using Zenject;
 
 public interface IRopeService
 {
+    int SpawnedCount { get; }
     Rope Spawn(Vector3 start, Vector3 direction, bool connected);
     void DeSpawn(Rope rope);
+    IEnumerable<Rope> GetSpawned();
 }
 
 public class RopeService : IRopeService
 {
     private readonly SignalBus _signalBus;
     private readonly List<Vector3> _cacheSegments = new();
-    private readonly HashSet<Rope> _spawned = new();
+    private readonly List<Rope> _spawned = new();
     private readonly RopeConfig _config;
 
+    private Rope _first;
+    
     public RopeService(SignalBus signalBus, RopeConfig config)
     {
         _signalBus = signalBus ?? throw new ArgumentNullException(nameof(signalBus));
@@ -26,6 +30,8 @@ public class RopeService : IRopeService
     // {
     //     
     // }
+
+    public int SpawnedCount => _spawned.Count;
 
     public Rope Spawn(Vector3 start, Vector3 end, bool connected)
     {
@@ -47,6 +53,17 @@ public class RopeService : IRopeService
         if (!_spawned.Contains(rope))
             throw new InvalidOperationException($"Cant find rope {rope}");
         
+        _signalBus.Fire(new RopeDeSpawned(rope));
         _spawned.Remove(rope);
     }
+
+    public bool IsActive(Rope rope)
+    {
+        if (rope == null)
+            return false;
+
+        return _spawned.Contains(rope);
+    }
+    
+    public IEnumerable<Rope> GetSpawned() => _spawned;
 }
