@@ -1,5 +1,6 @@
 ﻿public interface ICharacterStateMachine
 {
-    bool TryGetState(out ICharacterState state);
-    void SetState<T>() where T : ICharacterState;
+    bool TryGetState(out BaseCharacterState state);
+    void SetState<T>() where T : BaseCharacterState;
+    void SetState(BaseCharacterState state);
 }

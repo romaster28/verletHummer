@@ -18,17 +18,13 @@ public class CharacterHeadController : IHandler<StartTick>, IHandler<Tick>, IHan
     
     private Vector2 _currentInput;
 
-    public CharacterHeadController(
-        IInputService input,
-        ISettingsService settings,
-        CharacterConfig config,
-        CharacterHead head, Character character)
+    public CharacterHeadController(IInputService input, ISettingsService settings, CharacterFacade characterFacade)
     {
         _input = input ?? throw new ArgumentNullException(nameof(input));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        _config = config ?? throw new ArgumentNullException(nameof(config));
-        _head = head ?? throw new ArgumentNullException(nameof(head));
-        _character = character ?? throw new ArgumentNullException(nameof(character));
+        _config = characterFacade.Config;
+        _head = characterFacade.Head;
+        _character = characterFacade.Character;
     }
 
     private void OnLookInput(Vector2 input)

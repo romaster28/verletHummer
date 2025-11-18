@@ -2,20 +2,12 @@
 using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Zenject;
 
 public class ResourcesAssetProvider : IAssetProvider
 {
-    [SerializeField, FoldoutGroup("Asset Paths")]
-    private List<string> _assetPaths = new List<string>();
+    private readonly List<string> _assetPaths = new List<string>();
 
     private readonly Dictionary<string, Object> _loadedAssets = new();
-
-    [Inject]
-    private void Construct()
-    {
-        Debug.Log("AssetProvider initialized");
-    }
 
     public T LoadAsset<T>(string path) where T : Object
     {

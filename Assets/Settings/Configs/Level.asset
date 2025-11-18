@@ -12,6 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8839f322a8219224c90a84e30829ddd9, type: 3}
   m_Name: Level
   m_EditorClassIdentifier: 
+  _core:
+    _maxActiveRopes: 3
+  _ropeMove:
+    _minDistanceYConnectForUpMove: 10
+    _gravity: 9.8
+    _damping: 0
+    _initialSwingForce: 300
   _character:
     _moveSpeed: 5
     _acceleration: 15
@@ -34,5 +41,8 @@ MonoBehaviour:
       m_Bits: 64
     _gravity: {x: 0, y: -9.84, z: 0}
     _throwConfig:
-      _maxConnectDistance: 25
+      _maxConnectDistance: 60
+      _breakRopeDistance: 36
       _throwSpeed: 35
+      _collapseModifier: 2
+    _segments: 15

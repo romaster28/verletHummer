@@ -2,24 +2,24 @@
 using UniRx;
 using UnityEngine;
 
-public class GroundMoveState : ICharacterState
+public class GroundMoveState : BaseCharacterState
 {
     private readonly Character _player;
     private readonly CharacterHead _head;
-    private readonly CharacterModel _simulation;
     private readonly IInputService _inputService;
     private readonly CharacterConfig _config;
     private readonly RopeThrower _thrower;
 
-    private readonly CompositeDisposable _inputSubscribe = new();
-    
-    public GroundMoveState(Character player, CharacterConfig config, IInputService inputService, CharacterHead head, RopeThrower thrower)
+    private CharacterModel _simulation;
+    private CompositeDisposable _inputSubscribe;
+
+    public GroundMoveState(CharacterFacade characterFacade, RopeThrower thrower, IInputService inputService)
     {
-        _player = player ?? throw new ArgumentNullException(nameof(player));
-        _inputService = inputService ?? throw new ArgumentNullException(nameof(inputService));
-        _simulation = new CharacterModel(config, player.Position.Value);
-        _head = head ?? throw new ArgumentNullException(nameof(head));
+        _player = characterFacade.Character;
+        _config = characterFacade.Config;
+        _head = characterFacade.Head;
         _thrower = thrower ?? throw new ArgumentNullException(nameof(thrower));
+        _inputService = inputService ?? throw new ArgumentNullException(nameof(inputService));
     }
 
     private void OnMoveInput(Vector2 input)
@@ -46,25 +46,28 @@ public class GroundMoveState : ICharacterState
         _thrower.ThrowToCrosshair();
     }
 
-    public void Enter()
+    public override void Enter()
     {
+        _simulation = new CharacterModel(_config, _player.Position.Value);
+        
+        _inputSubscribe = new CompositeDisposable();
         _inputService.GetHandler<MoveInput>().Property.Subscribe(OnMoveInput).AddTo(_inputSubscribe);
         _inputService.GetHandler<JumpInput>().Property.Subscribe(OnJumpInput).AddTo(_inputSubscribe);
         _inputService.GetHandler<ThrowRopeInput>().Property.Subscribe(OnThrowRopeInput).AddTo(_inputSubscribe);
-        
+
         _head.Rotation.Subscribe(OnHeadRotationChanged);
     }
 
-    public void FixedTick()
+    public override void FixedTick()
     {
         _simulation.TickSimulate();
-        
+
         _player.Position.Value = _simulation.Transform.Position;
         _player.Rotation.Value = _simulation.Transform.Rotation;
         _player.Scale.Value = _simulation.Transform.Scale;
     }
 
-    public void Exit()
+    public override void Exit()
     {
         _inputSubscribe?.Dispose();
     }

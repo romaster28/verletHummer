@@ -9,6 +9,7 @@ public interface IRopeService
     Rope Spawn(Vector3 start, Vector3 direction, bool connected);
     void DeSpawn(Rope rope);
     IEnumerable<Rope> GetSpawned();
+    bool IsActive(Rope rope);
 }
 
 public class RopeService : IRopeService
@@ -26,11 +27,6 @@ public class RopeService : IRopeService
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    // public Rope Throw(Vector3 start, Vector3 direction)
-    // {
-    //     
-    // }
-
     public int SpawnedCount => _spawned.Count;
 
     public Rope Spawn(Vector3 start, Vector3 end, bool connected)
@@ -38,7 +34,7 @@ public class RopeService : IRopeService
         for (int i = 0; i < _config.ToRopeConfig().Segments; i++) 
             _cacheSegments.Add(i == 0 ? start : Vector3.zero);
 
-        var result = new Rope(_cacheSegments);
+        var result = new Rope(_cacheSegments, end);
         _spawned.Add(result);
         _signalBus.Fire(new RopeSpawned(result, start, end, connected));
         _cacheSegments.Clear();

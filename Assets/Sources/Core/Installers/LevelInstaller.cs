@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -16,7 +17,7 @@ public class LevelInstaller : MonoInstaller
     public override void InstallBindings()
     {
         SignalBusInstaller.Install(Container);
-        
+
         BindServices();
         BindRope();
         BindCharacter();
@@ -29,31 +30,24 @@ public class LevelInstaller : MonoInstaller
         Container.DeclareSignal<RopeSpawned>();
         Container.DeclareSignal<RopeDeSpawned>();
     }
-    
+
     private void BindCharacter()
     {
         Container.Bind<Character>().AsSingle().WithArguments(_spawnPoint.ToModel());
         Container.Bind<CharacterHead>().AsSingle().WithArguments(_spawnPoint.ToModel());
+
+        Container.Bind<CharacterFacade>().AsSingle();
         
         Container.Bind<ICharacterStateMachine>().To<CharacterStateMachine>().AsSingle();
-        Container.Bind<CharacterStatesCachedPoolProvider>().AsSingle().WhenInjectedInto<CharacterStateMachine>();
-        Container.Bind<IEnumerable<ICharacterState>>().FromMethod(CreateCharacterStates).WhenInjectedInto<CharacterStatesCachedPoolProvider>();
-
+        Container.BindFactory<Type, BaseCharacterState, CharacterStateFactory>().FromFactory<PooledCharacterStateFactory>();
+        
         _characterController = Container.Instantiate<CharacterController>();
         _characterPresenter = Container.Instantiate<CharacterPresenter>();
 
         _characterHeadController = Container.Instantiate<CharacterHeadController>();
         _characterHeadPresenter = Container.Instantiate<CharacterHeadPresenter>();
 
-        _ropeController = Container.Instantiate<RopeController>(); 
-        IEnumerable<ICharacterState> CreateCharacterStates(InjectContext ctx)
-        {
-            return new ICharacterState[]
-            {
-                ctx.Container.Instantiate<GroundMoveState>(),
-                ctx.Container.Instantiate<RopeMoveState>()
-            };
-        }
+        _ropeController = Container.Instantiate<RopeController>();
     }
 
     private void BindGameLoop()
@@ -96,17 +90,23 @@ public class LevelInstaller : MonoInstaller
         Container.Bind<IAssetProvider>().To<ResourcesAssetProvider>().AsSingle();
         Container.Bind<ICameraService>().To<CinemachineCameraService>().AsSingle();
         Container.Bind<IRopeService>().To<RopeService>().AsSingle();
+        
+        #if UNITY_EDITOR
+        Container.Bind<ILogService>().To<DebugLogService>().AsSingle();
+        #else
+        Container.Bind<ILogService>().To<StubLogService>().AsSingle();
+        #endif
     }
-    
+
 #if UNITY_EDITOR
     [Button("Visualize Character in Editor")]
     private void VisualizeCharacter()
     {
         var assetProvider = new ResourcesAssetProvider();
         var characterViewPrefab = assetProvider.LoadAsset<CharacterView>("somePath");
-        if (characterViewPrefab == null || _spawnPoint == null) 
+        if (characterViewPrefab == null || _spawnPoint == null)
             return;
-        
+
         var tempView = UnityEditor.PrefabUtility.InstantiatePrefab(characterViewPrefab) as CharacterView;
         if (tempView != null)
         {
