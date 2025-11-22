@@ -42,10 +42,10 @@ public class RopeThrower
         _ropeService.Spawn(_character.Position.Value, endPoint, successConnected);
         
         if (_ropeService.SpawnedCount > _core.MaxActiveRopes)
-            _ropeService.DeSpawn(_ropeService.GetSpawned().First());
+            _ropeService.Disconnect(_ropeService.GetSpawned().First());
         
         if (!successConnected)
-            _ropeService.DeSpawn(_ropeService.GetSpawned().Last());
+            _ropeService.Disconnect(_ropeService.GetSpawned().Last());
     }
 
     private void OnCheckBreakDistanceInterval(long tick)
@@ -59,7 +59,7 @@ public class RopeThrower
         }
 
         foreach (var broke in _broken) 
-            _ropeService.DeSpawn(broke);
+            _ropeService.Disconnect(broke);
         
         _broken.Clear();
     }

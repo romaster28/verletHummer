@@ -1,12 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 public class CompositeHandler<T> : IHandler<T>
 {
     private readonly IHandler<T>[] _handlers;
 
-    public CompositeHandler(IHandler<T>[] handlers)
+    public CompositeHandler(IEnumerable<IHandler<T>> handlers)
     {
-        _handlers = handlers ?? throw new ArgumentNullException(nameof(handlers));
+        if (handlers == null)
+            throw new ArgumentNullException(nameof(handlers));
+        
+        _handlers = handlers.ToArray();
     }
 
     public void Handle(T eventData)

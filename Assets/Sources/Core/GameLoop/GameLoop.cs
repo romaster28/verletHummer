@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
 
@@ -29,3 +30,8 @@ public class GameLoop : MonoBehaviour
         _destroyHandler.Handle(new DestroyTick());
     }
 }
+
+public class StartHandler : CompositeHandler<StartTick> { public StartHandler(IEnumerable<IHandler<StartTick>> handlers) : base(handlers) { } }
+public class TickHandler : CompositeHandler<Tick> { public TickHandler(IEnumerable<IHandler<Tick>> handlers) : base(handlers) { } }
+public class FixedTickHandler : CompositeHandler<FixedTick> { public FixedTickHandler(IEnumerable<IHandler<FixedTick>> handlers) : base(handlers) { } }
+public class DestroyTickHandler : CompositeHandler<DestroyTick> { public DestroyTickHandler(IEnumerable<IHandler<DestroyTick>> handlers) : base(handlers) { } }

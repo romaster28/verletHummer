@@ -62,7 +62,7 @@ public class RopeSwingState : BaseCharacterState
         _simulation = new PendulumSimulation(config, -_config.InitialSwingForce);
         
         if (_connected != null && _ropeService.IsActive(_connected))
-            _ropeService.DeSpawn(_connected);
+            _ropeService.Disconnect(_connected);
         
         _connected = rope;
     }
@@ -88,7 +88,7 @@ public class RopeSwingState : BaseCharacterState
         if (!pressed)
             return;
 
-        _ropeService.DeSpawn(_connected);
+        _ropeService.Disconnect(_connected);
         _characterStateMachine.SetState<GroundMoveState>();
     }
 }

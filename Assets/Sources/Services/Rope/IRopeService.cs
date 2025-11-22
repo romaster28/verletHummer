@@ -7,6 +7,7 @@ public interface IRopeService
 {
     int SpawnedCount { get; }
     Rope Spawn(Vector3 start, Vector3 direction, bool connected);
+    void Disconnect(Rope rope);
     void DeSpawn(Rope rope);
     IEnumerable<Rope> GetSpawned();
     bool IsActive(Rope rope);
@@ -39,6 +40,14 @@ public class RopeService : IRopeService
         _signalBus.Fire(new RopeSpawned(result, start, end, connected));
         _cacheSegments.Clear();
         return result;
+    }
+
+    public void Disconnect(Rope rope)
+    {
+        if (!_spawned.Contains(rope))
+            throw new InvalidOperationException($"Cant find rope {rope}");
+        
+        _signalBus.Fire(new RopeDisconnected(rope));
     }
 
     public void DeSpawn(Rope rope)

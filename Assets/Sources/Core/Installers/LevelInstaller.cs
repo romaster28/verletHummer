@@ -8,12 +8,6 @@ public class LevelInstaller : MonoInstaller
 {
     [Required] [SerializeField] private Transform _spawnPoint;
 
-    private CharacterController _characterController;
-    private CharacterPresenter _characterPresenter;
-    private CharacterHeadController _characterHeadController;
-    private CharacterHeadPresenter _characterHeadPresenter;
-    private RopeController _ropeController;
-
     public override void InstallBindings()
     {
         SignalBusInstaller.Install(Container);
@@ -26,9 +20,13 @@ public class LevelInstaller : MonoInstaller
 
     private void BindRope()
     {
+        Container.BindInterfacesAndSelfTo<RopeController>().AsSingle();
+        Container.Bind<RopePresenter>().AsSingle().NonLazy();
         Container.Bind<RopeThrower>().AsSingle();
+        
         Container.DeclareSignal<RopeSpawned>();
         Container.DeclareSignal<RopeDeSpawned>();
+        Container.DeclareSignal<RopeDisconnected>();
     }
 
     private void BindCharacter()
@@ -40,48 +38,21 @@ public class LevelInstaller : MonoInstaller
         
         Container.Bind<ICharacterStateMachine>().To<CharacterStateMachine>().AsSingle();
         Container.BindFactory<Type, BaseCharacterState, CharacterStateFactory>().FromFactory<PooledCharacterStateFactory>();
-        
-        _characterController = Container.Instantiate<CharacterController>();
-        _characterPresenter = Container.Instantiate<CharacterPresenter>();
 
-        _characterHeadController = Container.Instantiate<CharacterHeadController>();
-        _characterHeadPresenter = Container.Instantiate<CharacterHeadPresenter>();
-
-        _ropeController = Container.Instantiate<RopeController>();
+        Container.BindInterfacesAndSelfTo<CharacterController>().AsSingle();
+        Container.BindInterfacesAndSelfTo<CharacterPresenter>().AsSingle();
+        Container.BindInterfacesAndSelfTo<CharacterHeadController>().AsSingle();
+        Container.BindInterfacesAndSelfTo<CharacterHeadPresenter>().AsSingle();
     }
 
     private void BindGameLoop()
     {
-        Container.Bind<IHandler<StartTick>>()
-            .FromInstance(new CompositeHandler<StartTick>(new IHandler<StartTick>[]
-            {
-                _characterController,
-                _characterPresenter,
-                _characterHeadController,
-                _characterHeadPresenter
-            })).WhenInjectedInto<GameLoop>();
+        Container.Bind<IHandler<StartTick>>().To<StartHandler>().AsSingle().WhenInjectedInto<GameLoop>();
+        Container.Bind<IHandler<Tick>>().To<TickHandler>().AsSingle().WhenInjectedInto<GameLoop>();
+        Container.Bind<IHandler<FixedTick>>().To<FixedTickHandler>().AsSingle().WhenInjectedInto<GameLoop>();
+        Container.Bind<IHandler<DestroyTick>>().To<DestroyTickHandler>().AsSingle().WhenInjectedInto<GameLoop>();
 
-        Container.Bind<IHandler<Tick>>()
-            .FromInstance(new CompositeHandler<Tick>(new IHandler<Tick>[]
-            {
-                _characterHeadController
-            })).WhenInjectedInto<GameLoop>();
-
-        Container.Bind<IHandler<FixedTick>>()
-            .FromInstance(new CompositeHandler<FixedTick>(new IHandler<FixedTick>[]
-            {
-                _characterController,
-                _characterHeadController,
-                _ropeController
-            })).WhenInjectedInto<GameLoop>();
-
-        Container.Bind<IHandler<DestroyTick>>().FromInstance(new CompositeHandler<DestroyTick>(
-            new IHandler<DestroyTick>[]
-            {
-                _characterPresenter
-            }));
-
-        Container.InstantiateComponent<GameLoop>(new GameObject("Game Loop"));
+        Container.Bind<GameLoop>().FromNewComponentOnNewGameObject().WithGameObjectName("Game Loop").AsSingle().NonLazy();
     }
 
     private void BindServices()

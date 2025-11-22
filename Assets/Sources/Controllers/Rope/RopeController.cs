@@ -3,71 +3,55 @@ using System.Collections.Generic;
 using DR.RopeSimulation;
 using UniRx;
 using UnityEngine;
-using UnityEngine.Pool;
-using UnityEngine.ResourceManagement.Exceptions;
 using Zenject;
-using Object = UnityEngine.Object;
 
 public class RopeController : IHandler<FixedTick>
 {
-    private readonly IAssetProvider _assetProvider;
     private readonly RopeConfig _config;
     private readonly CharacterHead _character;
+    private readonly IRopeService _ropeService;
 
     private readonly Dictionary<Rope, RopeSimulation> _ropeSimulations = new();
     private readonly Dictionary<Rope, ValueTuple<Vector3, bool>> _throwing = new();
     private readonly ReactiveCollection<Rope> _collapsing = new();
-    private readonly Dictionary<Rope, RopeView> _viewMap = new();
-    private readonly ObjectPool<RopeView> _viewPool;
-
     private readonly HashSet<Rope> _needToRemove = new();
 
     private const float StopThrowDistanceToTarget = 2;
 
-    public RopeController(IAssetProvider assetProvider, RopeConfig config, SignalBus signalBus, CharacterHead character, CoreConfig coreConfig)
+    public RopeController(RopeConfig config, SignalBus signalBus, CharacterHead character, IRopeService ropeService)
     {
-        _assetProvider = assetProvider ?? throw new ArgumentNullException(nameof(assetProvider));
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _character = character ?? throw new ArgumentNullException(nameof(character));
-        _viewPool = new ObjectPool<RopeView>(Create, view => view.gameObject.SetActive(true),
-            view => view.gameObject.SetActive(false), null, true, coreConfig.MaxActiveRopes + 1);
+        _ropeService = ropeService ?? throw new ArgumentNullException(nameof(ropeService));
 
         signalBus.Subscribe<RopeSpawned>(OnRopeSpawned);
         signalBus.Subscribe<RopeDeSpawned>(OnRopeDeSpawned);
+        signalBus.Subscribe<RopeDisconnected>(OnRopeDisconnected);
         _collapsing.ObserveRemove().Subscribe(OnEndCollapse);
     }
 
     private void OnRopeSpawned(RopeSpawned signal)
     {
-        var view = _viewPool.Get();
-
-        signal.Rope.Segments.ObserveReplace().Subscribe(replaced =>
-        {
-            view.UpdateSegment(replaced.Index, replaced.NewValue);
-        }).AddTo(view);
-
         var simulation = new RopeSimulation(_config.ToRopeConfig(), signal.Start);
         var targetThrowPoint = signal.End;
 
         _ropeSimulations.Add(signal.Rope, simulation);
         _throwing.Add(signal.Rope, new ValueTuple<Vector3, bool>(targetThrowPoint, signal.Connected));
-        _viewMap.Add(signal.Rope, view);
+    }
+
+    private void OnRopeDisconnected(RopeDisconnected signal)
+    {
+        _collapsing.Add(signal.Rope);
     }
 
     private void OnRopeDeSpawned(RopeDeSpawned signal)
     {
-        if (!_viewMap.ContainsKey(signal.Rope))
-            throw new OperationException($"Not founded view for rope: {signal.Rope}");
-
-        _collapsing.Add(signal.Rope);
+        _needToRemove.Add(signal.Rope);
     }
 
     private void OnEndCollapse(CollectionRemoveEvent<Rope> item)
     {
-        if (!_viewMap.ContainsKey(item.Value))
-            throw new OperationException($"Not founded view for rope: {item.Value}");
-        
-        _needToRemove.Add(item.Value);
+        _ropeService.DeSpawn(item.Value);
     }
 
     public void Handle(FixedTick eventData)
@@ -117,19 +101,9 @@ public class RopeController : IHandler<FixedTick>
                 rope.Segments[i] = simulation.GetSegment(i);
         }
 
-        foreach (var rope in _needToRemove)
-        {
-            _viewPool.Release(_viewMap[rope]);
+        foreach (var rope in _needToRemove) 
             _ropeSimulations.Remove(rope);
-        }
         
         _needToRemove.Clear();
-    }
-
-    private RopeView Create()
-    {
-        var view = _assetProvider.LoadAsset<RopeView>("Level/RopeView");
-        var spawned = Object.Instantiate(view);
-        return spawned;
     }
 }
