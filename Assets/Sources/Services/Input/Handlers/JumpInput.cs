@@ -1,6 +1,6 @@
 ﻿using UniRx;
 
-public class JumpInput : InputHandler<bool>
+public class JumpInput : InputButtonHandler
 {
     public JumpInput(ReactiveProperty<bool> property) : base(property)
     {

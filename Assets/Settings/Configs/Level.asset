@@ -14,13 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _core:
     _maxActiveRopes: 3
-  _ropeMove:
+  _ropeSwing:
     _minDistanceYConnectForUpMove: 10
     _gravity: 9.8
     _damping: 0
-    _initialSwingForce: 300
+    _initialSwingForce: 500
+    _forceCropRopeDistancePercentage: 20
   _character:
-    _moveSpeed: 5
+    _moveSpeed: 8
     _acceleration: 15
     _airControl: 0.5
     _jumpHeight: 3
@@ -31,7 +32,7 @@ MonoBehaviour:
       m_Bits: 64
     _maxScopeAngle: 45
     _height: 1.5
-    _verticalAngleRange: {x: -65, y: 65}
+    _verticalAngleRange: {x: -85, y: 85}
   _rope:
     _accuracy: 100
     _elastic: 25

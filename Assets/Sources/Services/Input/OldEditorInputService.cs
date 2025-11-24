@@ -26,8 +26,8 @@ public class OldEditorInputService : IInputService
         {
             moveProperty.Value = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
             lookProperty.Value = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
-            jumpProperty.Value = Input.GetKeyDown(KeyCode.Space);
-            throwRopeProperty.Value = Input.GetKeyDown(KeyCode.LeftAlt);
+            jumpProperty.Value = Input.GetKeyUp(KeyCode.Space);
+            throwRopeProperty.Value = Input.GetKeyUp(KeyCode.LeftAlt);
         });
     }
 

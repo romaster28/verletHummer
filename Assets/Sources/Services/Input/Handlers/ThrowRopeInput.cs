@@ -1,6 +1,6 @@
 ﻿using UniRx;
 
-public class ThrowRopeInput : InputHandler<bool>
+public class ThrowRopeInput : InputButtonHandler
 {
     public ThrowRopeInput(ReactiveProperty<bool> property) : base(property)
     {

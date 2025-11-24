@@ -21,3 +21,19 @@ public abstract class InputHandler<T> : IInputHandler
 
     public IReadOnlyReactiveProperty<T> Property => _property;
 }
+
+public abstract class InputButtonHandler : InputHandler<bool>
+{
+    protected InputButtonHandler(ReactiveProperty<bool> property) : base(property)
+    {
+        property.Subscribe(OnNext);
+    }
+
+    public event Action Pressed;
+
+    private void OnNext(bool isActive)
+    {
+        if (isActive)
+            Pressed?.Invoke();
+    }
+}

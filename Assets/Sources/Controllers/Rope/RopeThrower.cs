@@ -36,7 +36,6 @@ public class RopeThrower
         if (successConnected)
         {
             endPoint = hitInfo.point;
-            Debug.Log($"Connected rope");
         }
         
         _ropeService.Spawn(_character.Position.Value, endPoint, successConnected);

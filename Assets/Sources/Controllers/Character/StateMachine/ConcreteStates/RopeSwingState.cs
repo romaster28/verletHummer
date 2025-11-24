@@ -7,7 +7,7 @@ using Zenject;
 public class RopeSwingState : BaseCharacterState
 {
     private readonly Character _character;
-    private readonly RopeMoveConfig _config;
+    private readonly RopeSwingConfig _config;
     private readonly IRopeService _ropeService;
     private readonly IInputService _inputService;
     private readonly ICharacterStateMachine _characterStateMachine;
@@ -18,15 +18,14 @@ public class RopeSwingState : BaseCharacterState
     private PendulumSimulation _simulation;
     private CompositeDisposable _inputSubscribe;
 
-    public RopeSwingState(Character character, RopeMoveConfig config, IRopeService ropeService,
-        IInputService inputService, ICharacterStateMachine stateMachine, RopeThrower thrower, SignalBus signalBus)
+    public RopeSwingState(RopeFacade ropeFacade, CharacterFacade characterFacade, IInputService inputService, SignalBus signalBus)
     {
-        _character = character ?? throw new ArgumentNullException(nameof(character));
-        _ropeService = ropeService ?? throw new ArgumentNullException(nameof(ropeService));
-        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _character = characterFacade.Character;
+        _ropeService = ropeFacade.Service;
+        _config = ropeFacade.SwingConfig;
         _inputService = inputService ?? throw new ArgumentNullException(nameof(inputService));
-        _characterStateMachine = stateMachine ?? throw new ArgumentNullException(nameof(stateMachine));
-        _thrower = thrower ?? throw new ArgumentNullException(nameof(thrower));
+        _characterStateMachine = characterFacade.StateMachine;
+        _thrower = ropeFacade.Thrower;
         _signalBus = signalBus ?? throw new ArgumentNullException(nameof(signalBus));
     }
 
@@ -35,8 +34,8 @@ public class RopeSwingState : BaseCharacterState
         StartSwing(_ropeService.GetSpawned().Last());
 
         _inputSubscribe = new();
-        _inputService.GetHandler<JumpInput>().Property.Subscribe(OnJumpInputChanged).AddTo(_inputSubscribe);
-        _inputService.GetHandler<ThrowRopeInput>().Property.Subscribe(OnThrowRopeInput).AddTo(_inputSubscribe);
+        _inputService.GetHandler<JumpInput>().Pressed += OnJumpInput;
+        _inputService.GetHandler<ThrowRopeInput>().Pressed += OnThrowRopeInput;
         
         _signalBus.Subscribe<RopeSpawned>(Callback);
     }
@@ -45,6 +44,8 @@ public class RopeSwingState : BaseCharacterState
     {
         _inputSubscribe?.Dispose();
         _signalBus.Unsubscribe<RopeSpawned>(Callback);
+        _inputService.GetHandler<JumpInput>().Pressed -= OnJumpInput;
+        _inputService.GetHandler<ThrowRopeInput>().Pressed -= OnThrowRopeInput;
     }
 
     public override void FixedTick()
@@ -58,7 +59,10 @@ public class RopeSwingState : BaseCharacterState
         if (_connected == rope)
             return;
         
-        var config = new PendulumConfig(_character.Position.Value, rope.Target, _config.Gravity);
+        Vector3 directionToTarget = (rope.Target - _character.Position.Value).normalized;
+        float distanceToTarget = Vector3.Distance(rope.Target, _character.Position.Value);
+        Vector3 bobStart = _character.Position.Value + directionToTarget * MathHelper.GetPercentage(distanceToTarget, _config.ForceCropRopeDistancePercentage);
+        var config = new PendulumConfig(bobStart, rope.Target, _config.Gravity);
         _simulation = new PendulumSimulation(config, -_config.InitialSwingForce);
         
         if (_connected != null && _ropeService.IsActive(_connected))
@@ -67,11 +71,8 @@ public class RopeSwingState : BaseCharacterState
         _connected = rope;
     }
 
-    private void OnThrowRopeInput(bool isActive)
+    private void OnThrowRopeInput()
     {
-        if (!isActive)
-            return;
-
         _thrower.ThrowToCrosshair();
     }
 
@@ -83,12 +84,11 @@ public class RopeSwingState : BaseCharacterState
         StartSwing(signal.Rope);
     }
 
-    private void OnJumpInputChanged(bool pressed)
+    private void OnJumpInput()
     {
-        if (!pressed)
-            return;
-
-        _ropeService.Disconnect(_connected);
+        if (_ropeService.IsActive(_connected))
+            _ropeService.Disconnect(_connected);
+        
         _characterStateMachine.SetState<GroundMoveState>();
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using UniRx;
 using UnityEngine;
+using Zenject;
 
 public class GroundMoveState : BaseCharacterState
 {
@@ -9,17 +10,23 @@ public class GroundMoveState : BaseCharacterState
     private readonly IInputService _inputService;
     private readonly CharacterConfig _config;
     private readonly RopeThrower _thrower;
-
+    private readonly SignalBus _signalBus;
+    private readonly RopeSwingConfig _ropeSwing;
+    private readonly ICharacterStateMachine _characterStateMachine;
+    
     private CharacterModel _simulation;
     private CompositeDisposable _inputSubscribe;
 
-    public GroundMoveState(CharacterFacade characterFacade, RopeThrower thrower, IInputService inputService)
+    public GroundMoveState(CharacterFacade characterFacade, RopeThrower thrower, IInputService inputService, SignalBus signalBus, RopeSwingConfig ropeSwingConfig)
     {
         _player = characterFacade.Character;
         _config = characterFacade.Config;
         _head = characterFacade.Head;
+        _characterStateMachine = characterFacade.StateMachine;
         _thrower = thrower ?? throw new ArgumentNullException(nameof(thrower));
         _inputService = inputService ?? throw new ArgumentNullException(nameof(inputService));
+        _signalBus = signalBus ?? throw new ArgumentNullException(nameof(signalBus));
+        _ropeSwing = ropeSwingConfig ?? throw new ArgumentNullException(nameof(ropeSwingConfig));
     }
 
     private void OnMoveInput(Vector2 input)
@@ -32,30 +39,38 @@ public class GroundMoveState : BaseCharacterState
         _simulation.RotateToAngle(rotation.eulerAngles.y);
     }
 
-    private void OnJumpInput(bool isActive)
+    private void OnJumpInput()
     {
-        if (isActive)
-            _simulation.TryJump();
+        _simulation.TryJump();
     }
 
-    private void OnThrowRopeInput(bool isActive)
+    private void OnThrowRopeInput()
     {
-        if (!isActive)
+        _thrower.ThrowToCrosshair();
+    }
+
+    private void OnRopeSpawned(RopeSpawned signal)
+    {
+        if (!signal.Connected)
             return;
 
-        _thrower.ThrowToCrosshair();
+        float differenceConnectY = signal.End.y - signal.Start.y;
+
+        if (differenceConnectY >= _ropeSwing.MinDistanceYConnectForUpMove)
+            _characterStateMachine.SetState<RopeSwingState>();
     }
 
     public override void Enter()
     {
         _simulation = new CharacterModel(_config, _player.Position.Value);
-        
+
         _inputSubscribe = new CompositeDisposable();
         _inputService.GetHandler<MoveInput>().Property.Subscribe(OnMoveInput).AddTo(_inputSubscribe);
-        _inputService.GetHandler<JumpInput>().Property.Subscribe(OnJumpInput).AddTo(_inputSubscribe);
-        _inputService.GetHandler<ThrowRopeInput>().Property.Subscribe(OnThrowRopeInput).AddTo(_inputSubscribe);
-
-        _head.Rotation.Subscribe(OnHeadRotationChanged);
+        _inputService.GetHandler<JumpInput>().Pressed += OnJumpInput;
+        _inputService.GetHandler<ThrowRopeInput>().Pressed += OnThrowRopeInput;
+        _head.Rotation.Subscribe(OnHeadRotationChanged).AddTo(_inputSubscribe);
+        
+        _signalBus.Subscribe<RopeSpawned>(OnRopeSpawned);
     }
 
     public override void FixedTick()
@@ -70,5 +85,8 @@ public class GroundMoveState : BaseCharacterState
     public override void Exit()
     {
         _inputSubscribe?.Dispose();
+        _signalBus.Unsubscribe<RopeSpawned>(OnRopeSpawned);
+        _inputService.GetHandler<JumpInput>().Pressed -= OnJumpInput;
+        _inputService.GetHandler<ThrowRopeInput>().Pressed -= OnThrowRopeInput;
     }
 }

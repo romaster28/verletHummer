@@ -23,6 +23,7 @@ public class LevelInstaller : MonoInstaller
         Container.BindInterfacesAndSelfTo<RopeController>().AsSingle();
         Container.Bind<RopePresenter>().AsSingle().NonLazy();
         Container.Bind<RopeThrower>().AsSingle();
+        Container.Bind<RopeFacade>().AsSingle();
         
         Container.DeclareSignal<RopeSpawned>();
         Container.DeclareSignal<RopeDeSpawned>();
